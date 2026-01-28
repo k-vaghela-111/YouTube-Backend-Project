@@ -1,6 +1,9 @@
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { ApiError } from "../utils/ApiError.js"
 import { User } from "../models/user.model.js"
+import { uploadOnCloudinary } from "../utils/cloudinary.js"
+import { ApiResponse } from "../utils/ApiResponse.js"
+
 
 const registerUser = asyncHandler(async (req, res) => {
     // fetch user details  from body
@@ -27,6 +30,21 @@ const registerUser = asyncHandler(async (req, res) => {
         throw new ApiError(409, "user with this email or username already exist !!")
     }
 
+    const avtarLocalPath = req.files?.avtar[0]?.path; //will provide local path of avtar
+    const coverImagePath = req.files?.coverImage[0]?.path;//will provide local path of image
+
+    if (!avtarLocalPath) {
+        throw new ApiError(400, "Avtar file is required ")
+    }
+
+    const avtar = await uploadOnCloudinary(avtarLocalPath);
+    const coverImage = await uploadOnCloudinary(coverImagePath);
+
+    if (!avtar) {
+        throw new ApiError(400, "Avtar file is required ")
+    }
+
+    
 
 })
 
