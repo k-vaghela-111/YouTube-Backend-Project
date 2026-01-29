@@ -18,6 +18,8 @@ const registerUser = asyncHandler(async (req, res) => {
 
     const { fullName, email, username, password } = req.body
 
+
+
     if (!fullName || !email || !username || !password) {
         throw new ApiError(400, "All feilds are required")
     }
@@ -31,14 +33,19 @@ const registerUser = asyncHandler(async (req, res) => {
     }
 
     const avtarLocalPath = req.files?.avtar[0]?.path; //will provide local path of avtar
-    const coverImagePath = req.files?.coverImage[0]?.path;//will provide local path of image
+
+    let coverImageLocalPath;
+
+    if (req.files && Array.isArray(req.files.coverImage) && req.files.coverImage.length > 0) {
+        coverImageLocalPath = req.files.coverImage[0].path;
+    }
 
     if (!avtarLocalPath) {
         throw new ApiError(400, "Avtar file is required ")
     }
 
     const avtar = await uploadOnCloudinary(avtarLocalPath);
-    const coverImage = await uploadOnCloudinary(coverImagePath);
+    const coverImage = await uploadOnCloudinary(coverImageLocalPath);
 
     if (!avtar) {
         throw new ApiError(400, "Avtar file is required ")
@@ -62,7 +69,7 @@ const registerUser = asyncHandler(async (req, res) => {
     }
 
     return res.status(201).json(
-        new ApiResponse(200, createdUser, "User registered successfyully")
+        new ApiResponse(200, createdUser, "User registered successfully")
     )
 
 })
