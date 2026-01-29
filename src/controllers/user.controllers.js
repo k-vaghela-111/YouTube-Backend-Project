@@ -9,13 +9,13 @@ const generateAccessAndRefreshTokens = async (userId) => {
     try {
         const user = await User.findById(userId)
 
-        const AccessToken = user.generateAccessToken()
-        const RefreshToken = user.generateRefreshToken()
+        const accessToken = user.generateAccessToken()
+        const refreshToken = user.generateRefreshToken()
 
-        user.RefreshToken = RefreshToken
+        user.refreshToken = refreshToken
         await user.save({ validateBeforeSave: false })
 
-        return { AccessToken, RefreshToken }
+        return { accessToken, refreshToken }
 
     } catch (error) {
         throw new ApiError(401, "Error while generating Access and Refresh Tokens")
@@ -121,7 +121,31 @@ const loginUser = asyncHandler(async (req, res) => {
         throw new ApiError(401, "Password is invalid ")
     }
 
+    const { accessToken, refreshToken } = await generateAccessAndRefreshTokens(user._id)
 
+    const loggedInUser = await User.findById(user._id)
+        .select(
+            "-password -refreshToken"
+        )
+
+    const options = {
+        httpOnly: true,
+        secure: true
+    }
+
+    return res
+        .status(200)
+        .cookie("accessToken", accessToken, options)
+        .cookie("refreshToken", refreshToken, options)
+        .json(
+            new ApiResponse(
+                200,
+                {
+                    user: loggedInUser, accessToken, refreshToken
+                },
+                "User logged in successfully "
+            )
+        )
 
 })
 
