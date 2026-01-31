@@ -190,7 +190,7 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
     const incomingRefreshToken = req.user.refreshToken || req.body.refreshToken
 
     if (!incomingRefreshToken) {
-        throw new ApiError(401, "Unauthorized access , refreshToken not found")
+        throw new ApiError(401, "Refresh token missing. Unauthorized request.")
     }
 
     try {
@@ -202,11 +202,11 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
         const user = await User.findById(decodedToken?._id)
 
         if (!user) {
-            throw new ApiError(401, "Unauthorized access , refreshToken not found")
+            throw new ApiError(401, "Unauthorized. Invalid refresh token.")
         }
 
         if (incomingRefreshToken !== user?.refreshToken) {
-            throw new ApiError(401, "invalid or expired refreshToken")
+            throw new ApiError(401, "Invalid or expired refresh token.")
         }
 
         const { accessToken, newRefreshToken } = await generateAccessAndRefreshTokens(user._id)
