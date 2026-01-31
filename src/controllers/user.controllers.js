@@ -37,7 +37,7 @@ const registerUser = asyncHandler(async (req, res) => {
     const { fullName, email, username, password } = req.body
 
     if (!fullName || !email || !username || !password) {
-        throw new ApiError(400, "All feilds are required")
+        throw new ApiError(400, "All required fields must be provided.")
     }
 
     const existedUser = await User.findOne({
@@ -45,7 +45,7 @@ const registerUser = asyncHandler(async (req, res) => {
     })
 
     if (existedUser) {
-        throw new ApiError(409, "user with this email or username already exist !!")
+        throw new ApiError(409, "A user with this email or username already exists.")
     }
 
     const avatarLocalPath = req.files?.avatar[0]?.path; //will provide local path of avtar
@@ -57,14 +57,14 @@ const registerUser = asyncHandler(async (req, res) => {
 
 
     if (!avatarLocalPath) {
-        throw new ApiError(400, "Avtar file is required ")
+        throw new ApiError(400, "Avatar image is required.")
     }
 
     const avatar = await uploadOnCloudinary(avatarLocalPath);
     const coverImage = await uploadOnCloudinary(coverImagePath);
 
     if (!avatar) {
-        throw new ApiError(400, "Avtar file is required ")
+        throw new ApiError(500, "Failed to upload avatar image. Please try again.")
     }
 
     const user = await User.create({
@@ -81,7 +81,7 @@ const registerUser = asyncHandler(async (req, res) => {
     )
 
     if (!createdUser) {
-        throw new ApiError(500, "Something went wrong while registering the user")
+        throw new ApiError(500, "User registration failed due to a server error.")
     }
 
     return res.status(201).json(
