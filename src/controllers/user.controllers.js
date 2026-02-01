@@ -99,13 +99,13 @@ const loginUser = asyncHandler(async (req, res) => {
     // access and refresh token genration
     // send cookie
 
-    const {email, password } = req.body
+    const { email, password } = req.body
 
     if (!email) {
         throw new ApiError(400, "Email is required to login.")
     }
 
-    const user = await User.findOne({email})
+    const user = await User.findOne({ email })
 
     if (!user) {
         throw new ApiError(404, "No account found with the provided email or username.")
@@ -270,10 +270,26 @@ const changeCurrentPassword = asyncHandler(async (req, res) => {
 
 })
 
+const getCurrentUser = asyncHandler(async (req, res) => {
+
+    return res
+        .status(200)
+        .json(
+            new ApiResponse(
+                200,
+                req.user,
+                "Current User Fetched Successfully"
+            )
+        )
+})
+
+
+
 export {
     registerUser,
     loginUser,
     logoutUser,
     refreshAccessToken,
-    changeCurrentPassword
+    changeCurrentPassword,
+    getCurrentUser
 }
