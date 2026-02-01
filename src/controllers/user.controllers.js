@@ -99,15 +99,13 @@ const loginUser = asyncHandler(async (req, res) => {
     // access and refresh token genration
     // send cookie
 
-    const { username, email, password } = req.body
+    const {email, password } = req.body
 
-    if (!username && !email) {
-        throw new ApiError(400, "Username or email is required to login.")
+    if (!email) {
+        throw new ApiError(400, "Email is required to login.")
     }
 
-    const user = await User.findOne({
-        $or: [{ email }, { username }]
-    })
+    const user = await User.findOne({email})
 
     if (!user) {
         throw new ApiError(404, "No account found with the provided email or username.")
