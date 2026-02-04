@@ -30,6 +30,6 @@ router.route("/update-avatar").post(verifyJWT, updateUserAvatar)
 
 router.route("/update-coverimage").post(verifyJWT, updateUserCoverImage)
 
-router.route("/channel-profile").get(getUserChannelProfile)
+router.route("/channel-profile").post(getUserChannelProfile)
 
 export default router
