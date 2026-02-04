@@ -26,15 +26,7 @@ const generateAccessAndRefreshTokens = async (userId) => {
 }
 
 const registerUser = asyncHandler(async (req, res) => {
-    // fetch user details  from body
-    // Validation - not empty
-    // check already exist or not ?
-    // check for images and avtar
-    // upload them to cloudinary , avtar
-    // create user object - create entry in db
-    // remove password and refreshToken feilds from response
-    // check for user creation
-    //return res
+    
 
     const { fullName, email, username, password } = req.body
 
@@ -94,13 +86,7 @@ const registerUser = asyncHandler(async (req, res) => {
 
 const loginUser = asyncHandler(async (req, res) => {
 
-    // req.body take data
-    //username or email check
-    //find the user
-    //check password
-    // access and refresh token genration
-    // send cookie
-
+    
     const { email, password } = req.body
 
     if (!email) {
@@ -181,13 +167,8 @@ const logoutUser = asyncHandler(async (req, res) => {
 })
 
 const refreshAccessToken = asyncHandler(async (req, res) => {
-    // take refresh token from user
-    // take refresh token of user from db
-    // encrypt the token taken from user
-    // check both token are equal
-    // generate new refresh and access token
 
-    const incomingRefreshToken = req.user.refreshToken || req.body.refreshToken
+     const incomingRefreshToken = req.cookies.refreshToken || req.body.refreshToken
 
     if (!incomingRefreshToken) {
         throw new ApiError(401, "Refresh token missing. Unauthorized request.")

@@ -18,7 +18,7 @@ router.route("/login").post(loginUser)
 
 router.route("/logout").post(verifyJWT, logoutUser)
 
-router.route("/refresh-token").post(refreshAccessToken)
+router.route("/refresh-token").get(verifyJWT,refreshAccessToken)
 
 router.route("/change-password").post(verifyJWT, changeCurrentPassword)
 
@@ -31,5 +31,6 @@ router.route("/update-avatar").post(verifyJWT, updateUserAvatar)
 router.route("/update-coverimage").post(verifyJWT, updateUserCoverImage)
 
 router.route("/channel-profile").post(getUserChannelProfile)
+
 
 export default router
