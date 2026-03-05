@@ -3,84 +3,127 @@ import { ApiError } from "../utils/ApiError.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { uploadOnCloudinary } from "../utils/cloudinary.js";
 import { Video } from "../models/video.model.js";
-import { isValidObjectId } from "mongoose";
+import mongoose, { isValidObjectId } from "mongoose";
 
 
 const getAllVideos = asyncHandler(async (req, res) => {
-    const { page = 1, limit = 10, query, sortBy = "createdAt", sortType = "desc", userId } = req.query
 
-    const filter = {}
+    const {
+        page = 1,
+        limit = 10,
+        query,
+        sortBy = "createdAt",
+        sortType = "desc",
+        userId
+    } = req.query
+
+    const match = {}
 
     if (query) {
-        filter.title = { $regex: query, $options: "i" }
+        match.$or = [
+            { title: { $regex: query, $options: "i" } },
+            { description: { $regex: query, $options: "i" } }
+        ]
     }
 
     if (userId) {
         if (!isValidObjectId(userId)) {
             throw new ApiError(400, "Invalid user id")
         }
-        filter.owner = userId
+        match.owner = new mongoose.Types.ObjectId(userId)
     }
 
-    const videos = await Video.find(filter)
-        .sort({ [sortBy]: sortType === "asc" ? 1 : -1 })
-        .skip((page - 1) * limit)
-        .limit(Number(limit))
+    const sort = {
+        [sortBy]: sortType === "asc" ? 1 : -1
+    }
 
-    return res
-        .status(200)
-        .json(new ApiResponse(200, videos, "Videos fetched successfully"))
+    const aggregate = Video.aggregate([
+        { $match: match },
+
+        { $sort: sort },
+
+        {
+            $lookup: {
+                from: "users",
+                localField: "owner",
+                foreignField: "_id",
+                as: "owner",
+                pipeline: [
+                    {
+                        $project: {
+                            username: 1,
+                            avatar: 1
+                        }
+                    }
+                ]
+            }
+        },
+
+        {
+            $addFields: {
+                owner: { $first: "$owner" }
+            }
+        }
+    ])
+
+    const options = {
+        page: Number(page),
+        limit: Number(limit)
+    }
+
+    const videos = await Video.aggregatePaginate(aggregate, options)
+
+    return res.status(200).json(
+        new ApiResponse(200, videos, "Videos fetched successfully")
+    )
 })
 
 
 const publishAVideo = asyncHandler(async (req, res) => {
 
-    const user = req.user._id
+    const user = req.user?._id
 
     if (!user) {
-        throw new ApiError(403, "User not found or not LoggedIn")
+        throw new ApiError(401, "User not authorized")
     }
 
-    const { title, description } = req.body || {}
+    const { title, description } = req.body
 
     if (!title || !description) {
-        throw new ApiError(402, "all fields are required")
+        throw new ApiError(400, "Title and description are required")
     }
 
     const videoLocalPath = req.files?.video?.[0]?.path
     const thumbnailLocalPath = req.files?.thumbnail?.[0]?.path
 
     if (!videoLocalPath || !thumbnailLocalPath) {
-        throw new ApiError(401, "Failed to upload url of video and thumbnail")
+        throw new ApiError(400, "Video and thumbnail are required")
     }
 
+    const videoUpload = await uploadOnCloudinary(videoLocalPath)
+    const thumbnailUpload = await uploadOnCloudinary(thumbnailLocalPath)
 
-    const videoUrl = await uploadOnCloudinary(videoLocalPath)
-    const thumbnailUrl = await uploadOnCloudinary(thumbnailLocalPath)
-
-    if (!videoUrl || !thumbnailUrl) {
-        throw new ApiError(402, "Error to upload files on cloadinary")
+    if (!videoUpload || !thumbnailUpload) {
+        throw new ApiError(500, "Cloudinary upload failed")
     }
 
-    const video = await Video.create(
-        {
-            videoFile: videoUrl.url,
-            thumbnail: thumbnailUrl.url,
-            title: title,
-            description: description,
-            owner: user,
-            duration: videoUrl.duration
-        }
+    const video = await Video.create({
+        videoFile: videoUpload.secure_url,
+        thumbnail: thumbnailUpload.secure_url,
+        title,
+        description,
+        owner: user,
+        duration: videoUpload.duration
+    })
+
+    return res.status(201).json(
+        new ApiResponse(201, video, "Video uploaded successfully")
     )
-
-    return res.
-        status(200)
-        .json(
-            new ApiResponse(200, video, "Video Uploaded Successfully")
-        )
 })
 
+
 const getVideoById = asyncHandler(async (req, res) => {
+
     const { videoId } = req.params
 
     if (!isValidObjectId(videoId)) {
@@ -93,54 +136,52 @@ const getVideoById = asyncHandler(async (req, res) => {
         throw new ApiError(404, "Video not found")
     }
 
-    return res
-        .status(200)
-        .json(
-            new ApiResponse(
-                200,
-                video,
-                "Video fetched successfully "
-            )
-        )
+    return res.status(200).json(
+        new ApiResponse(200, video, "Video fetched successfully")
+    )
 })
 
+
 const updateVideo = asyncHandler(async (req, res) => {
+
     const { videoId } = req.params
     const { title, description } = req.body
 
-    console.log("title : ", title);
-
-
     if (!isValidObjectId(videoId)) {
-        throw new ApiError(400, "Video id is invalid")
+        throw new ApiError(400, "Invalid video id")
     }
 
     const user = req.user
 
     if (!user) {
-        throw new ApiError(401, "Not an authorized user , please login")
+        throw new ApiError(401, "Unauthorized user")
     }
 
     const video = await Video.findById(videoId)
 
     if (!video) {
-        throw new ApiError(401, "Video not found in database")
+        throw new ApiError(404, "Video not found")
     }
 
-    if (user._id.toString() !== video.owner.toString()) {
-        throw new ApiError(403, "You are not allowed to change the details of video")
+    if (!video.owner.equals(user._id)) {
+        throw new ApiError(403, "You are not allowed to update this video")
     }
 
     let thumbnailUrl
 
     if (req.file?.path) {
-        const thumbnail = await uploadOnCloudinary(req.file.path)
-        thumbnailUrl = thumbnail.url
+        const uploadedThumbnail = await uploadOnCloudinary(req.file.path)
+
+        if (!uploadedThumbnail) {
+            throw new ApiError(500, "Thumbnail upload failed")
+        }
+
+        thumbnailUrl = uploadedThumbnail.secure_url
     }
 
     const updateData = {
-        title,
-        description
+        title: title || video.title,
+        description: description || video.description
     }
 
     if (thumbnailUrl) {
@@ -153,75 +194,64 @@ const updateVideo = asyncHandler(async (req, res) => {
         { new: true }
     )
 
-    return res
-        .status(200)
-        .json(
-            new ApiResponse(
-                200,
-                updatedVideo,
-                "Details updated successfully"
-            )
-        )
-
+    return res.status(200).json(
+        new ApiResponse(200, updatedVideo, "Video updated successfully")
+    )
 })
 
+
 const deleteVideo = asyncHandler(async (req, res) => {
+
     const { videoId } = req.params
 
     if (!isValidObjectId(videoId)) {
-        throw new ApiError(400, "Video id is invalid")
+        throw new ApiError(400, "Invalid video id")
     }
 
     const user = req.user
 
     if (!user) {
-        throw new ApiError(401, "Not an authorized user , please login")
+        throw new ApiError(401, "Unauthorized user")
     }
 
     const video = await Video.findById(videoId)
 
     if (!video) {
-        throw new ApiError(401, "Video not found in database")
+        throw new ApiError(404, "Video not found")
     }
 
-    if (user._id.toString() !== video.owner.toString()) {
-        throw new ApiError(403, "You are not allowed to delete the video")
+    if (!video.owner.equals(user._id)) {
+        throw new ApiError(403, "You are not allowed to delete this video")
     }
 
     await Video.findByIdAndDelete(videoId)
 
-    return res
-        .status(200)
-        .json(
-            new ApiResponse(
-                200,
-                {},
-                "Video deleted successfully"
-            )
-        )
-
+    return res.status(200).json(
+        new ApiResponse(200, {}, "Video deleted successfully")
+    )
 })
 
 const togglePublishStatus = asyncHandler(async (req, res) => {
+
     const { videoId } = req.params
 
     if (!isValidObjectId(videoId)) {
-        throw new ApiError(400, "Video id is invalid")
+        throw new ApiError(400, "Invalid video id")
     }
 
     const user = req.user
 
     if (!user) {
-        throw new ApiError(401, "Not an authorized user , please login")
+        throw new ApiError(401, "Unauthorized user")
     }
 
     const video = await Video.findById(videoId)
 
     if (!video) {
-        throw new ApiError(401, "Video not found in database")
+        throw new ApiError(404, "Video not found")
     }
 
-    if (user._id.toString() !== video.owner.toString()) {
+    if (!video.owner.equals(user._id)) {
         throw new ApiError(403, "You are not allowed to change publish status")
     }
 
@@ -233,12 +263,10 @@ const togglePublishStatus = asyncHandler(async (req, res) => {
         new ApiResponse(
             200,
             video,
-            "Publish status updated successfully"
+            `Video ${video.isPublished ? "Published" : "Unpublished"} successfully`
         )
     )
-
 })
-
 
 
 export {
