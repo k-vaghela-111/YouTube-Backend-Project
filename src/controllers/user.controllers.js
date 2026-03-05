@@ -5,8 +5,7 @@ import { uploadOnCloudinary } from "../utils/cloudinary.js"
 import { ApiResponse } from "../utils/ApiResponse.js"
 import jwt from "jsonwebtoken"
 import mongoose from "mongoose";
-
-
+import fs from "fs"
 
 const generateAccessAndRefreshTokens = async (userId) => {
     try {
@@ -56,6 +55,9 @@ const registerUser = asyncHandler(async (req, res) => {
     if (!avatar) {
         throw new ApiError(500, "Failed to upload avatar image. Please try again.")
     }
+
+    fs.unlinkSync(avatarLocalPath)
+    fs.unlinkSync(coverImagePath)
 
     const user = await User.create({
         fullName,

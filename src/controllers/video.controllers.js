@@ -4,6 +4,7 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 import { uploadOnCloudinary } from "../utils/cloudinary.js";
 import { Video } from "../models/video.model.js";
 import mongoose, { isValidObjectId } from "mongoose";
+import fs from "fs"
 
 
 const getAllVideos = asyncHandler(async (req, res) => {
@@ -106,6 +107,9 @@ const publishAVideo = asyncHandler(async (req, res) => {
     if (!videoUpload || !thumbnailUpload) {
         throw new ApiError(500, "Cloudinary upload failed")
     }
+
+    fs.unlinkSync(videoLocalPath)
+    fs.unlinkSync(thumbnailLocalPath)
 
     const video = await Video.create({
         videoFile: videoUpload.secure_url,
