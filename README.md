@@ -1,80 +1,55 @@
-🎥 YouTube Backend Project
------------------------------
-A backend project inspired by YouTube, built with Node.js, Express, and MongoDB.
-This repository implements the backend logic for a video streaming platform, including authentication, video management, and user interactions.
+# 🎬 YouTube Backend Project
 
-📂 Project Structure
-----------------------
-src/
-├── app.js             # Express application configuration
-├── index.js           # Entry point: server startup & DB connection
-├── constants.js       # Centralized constants (status codes, messages)
-├── db/                # MongoDB connection setup
-├── models/            # Mongoose models (User, Video, etc.)
-├── controllers/       # Business logic for authentication & video features
-├── routes/            # API route definitions
-├── middlewares/       # Authentication & error ha
+A backend clone of **YouTube’s core features**, extended with a **React + Tailwind frontend** for authentication.  
+This project demonstrates how a modern content-sharing platform can be structured with **Node.js, Express, MongoDB**, and a sleek **React UI**.
 
+---
 
+## 🛠️ Technologies Used
 
+### ⚙️ Backend
+- 🚀 **Node.js + Express.js** → RESTful API development  
+- 🗄️ **MongoDB (Mongoose)** → Schema & data models (User, Video, Comment, Like, Playlist, Subscription, Tweet)  
+- 🔐 **JWT Authentication** → Secure login & session handling  
+- ✨ **Prettier** → Code formatting  
 
-<h2>🔎 Functional Overview</h2>
+### 🎨 Frontend
+- ⚛️ **React.js** → Component-based UI  
+- 🎨 **Tailwind CSS** → Utility-first styling for responsive, modern design  
+- 🧭 **React Router** → Navigation between login/register pages  
+- 🌐 **Axios/Fetch** → API calls to backend  
 
-<h3>Server Layer</h3>
-<ul>
-  <li><strong>index.js</strong> initializes the server and establishes the database connection.</li>
-  <li><strong>app.js</strong> configures middleware (JSON parsing, cookies, CORS) and registers routes.</li>
-</ul>
+---
 
-<h3>Database Layer</h3>
-<ul>
-  <li><strong>db/</strong> manages MongoDB connectivity using Mongoose.</li>
-  <li><strong>models/</strong> define schemas for core entities:
-    <ul>
-      <li><strong>User</strong> → authentication, profile, subscriptions</li>
-      <li><strong>Video</strong> → upload, metadata, streaming</li>
-    </ul>
-  </li>
-</ul>
+## ⚙️ How It Works (Completed Features)
 
-<h3>Application Logic</h3>
-<ul>
-  <li><strong>controllers/</strong> implement the core features:
-    <ul>
-      <li>User authentication (signup, login, JWT handling)</li>
-      <li>Video operations (upload, delete, fetch)</li>
-      <li>User interactions (likes, comments, playlists)</li>
-    </ul>
-  </li>
-</ul>
+### 🔑 Authentication Flow
+- 📝 **Register (React + Tailwind)**  
+  - User fills styled form → React sends request to backend API  
+  - Backend validates input, hashes password, stores user in MongoDB  
+  - ✅ Success message returned to frontend  
 
-<h3>Routing Layer</h3>
-<ul>
-  <li><strong>routes/</strong> map API endpoints to controllers (e.g., <code>/api/auth</code>, <code>/api/videos</code>).</li>
-</ul>
+- 🔑 **Login (React + Tailwind)**  
+  - User submits credentials → React sends request to backend API  
+  - Backend verifies password and generates JWT token  
+  - 🔄 Token returned to frontend → stored for session management  
+  - 🎨 Tailwind ensures clean, responsive UI for forms  
 
-<h3>Middleware Layer</h3>
-<ul>
-  <li>Authentication middleware validates JWT tokens.</li>
-  <li>Error middleware ensures consistent and professional API responses.</li>
-</ul>
+### 🎥 Video Module (Backend)
+- 📤 Authenticated users can **upload, update, and delete videos**  
+- 📝 Metadata (title, description, tags) stored in MongoDB  
+- 👤 Videos linked to user accounts  
 
-<h3>Utility Layer</h3>
-<ul>
-  <li><strong>utils/</strong> provide helper functions for token generation, file handling, and reusable logic.</li>
-</ul>
+---
 
-<h3>Constants</h3>
-<ul>
-  <li><strong>constants.js</strong> centralizes status codes and messages for clean, maintainable responses.</li>
-</ul>
+## 📌 Current Status
 
+- ✅ **Working**  
+  - Backend: User & Video controllers/routers  
+  - Frontend: Login & Register pages (React + Tailwind) connected to backend  
 
-🛠️ Tech Stack
-- Node.js – runtime environment
-- Express.js – server framework
-- MongoDB + Mongoose – database and ODM
-- JWT – authentication
-- Prettier – code formatting
+- ⏳ **Pending**  
+  - Backend: Controllers/routers for comments, likes, playlists, subscriptions, tweet  
+  - Frontend: Video upload UI, playlist management interface, user dashboard  
 
-
+---
